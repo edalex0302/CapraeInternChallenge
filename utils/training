@@ -1,0 +1,73 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, r2_score
+import matplotlib.pyplot as plt
+import seaborn as sns
+import joblib
+
+# using dummy data csv
+df = pd.read_csv("capraeChallenge/data/dummy_lead_data.csv")
+
+# BBB rating to numbers
+bbb_mapping = {
+    'A+': 5,
+    'A': 4,
+    'B': 3,
+    'C': 2,
+    'D': 1,
+    'F': 0
+}
+df['bbb_rating'] = df['bbb_rating'].map(bbb_mapping)
+
+# picking features wanted
+features = [
+    'has_twitter',
+    'twitter_last_post_days_ago',
+    'has_linkedin',
+    'linkedin_last_post_days_ago',
+    'employee_count',
+    'estimated_revenue',
+    'bbb_rating',
+    'founder_linkedin_exists',
+    'website_exists'
+]
+
+target = 'lead_score'
+
+X = df[features]
+y = df[target]
+
+# split data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train With Random Forest
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+# Predict and evaluate result
+y_pred = model.predict(X_test)
+mae = mean_absolute_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+#print result
+print(f"Mean Absolute Error: {mae:.2f}")
+print(f"R^2 Score: {r2:.2f}")
+
+# feature importance
+feature_importances = pd.Series(model.feature_importances_, index=features)
+
+# save model
+joblib.dump(model, "Capraelead_score_model.pkl")
+print("Model saved as lead_score_model.pkl")
+
+#qucik look on result
+plt.figure(figsize=(10, 6))
+sns.barplot(x=feature_importances.values, y=feature_importances.index)
+plt.title("Feature Importances")
+plt.xlabel("Importance Score")
+plt.ylabel("Feature")
+plt.tight_layout()
+plt.show()
+
+
